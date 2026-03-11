@@ -33,6 +33,8 @@ public class Badge {
 
     private String badgeImageUrl;
 
+    private String obtainedBy;
+
     @Column(nullable = false)
     private LocalDateTime earnedAt;
 

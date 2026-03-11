@@ -42,7 +42,7 @@ public class MonthlySummary {
     private String aiSummary; // AI response
 
     @Column(columnDefinition = "TEXT")
-    private String visualizationDataJson; // JSON for charts
+    private String visualizationDataJson; // Can be used for data visualization
 
     @Column(nullable = false)
     private LocalDateTime generatedAt;
