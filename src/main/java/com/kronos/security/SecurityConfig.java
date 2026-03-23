@@ -31,7 +31,8 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider(PasswordEncoder encoder) {
-        DaoAuthenticationProvider p = new DaoAuthenticationProvider(userDetailsService);
+        DaoAuthenticationProvider p = new DaoAuthenticationProvider();
+        p.setUserDetailsService(userDetailsService);
         p.setPasswordEncoder(encoder);
         return p;
     }
@@ -43,14 +44,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, DaoAuthenticationProvider provider) throws Exception {
-        // ✅ Enable CORS (uses CorsConfigurationSource bean from CorsConfig)
         http.cors(cors -> {});
-
         http.csrf(csrf -> csrf.disable());
-
         http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // ✅ JSON 401/403
         http.exceptionHandling(eh -> eh
                 .authenticationEntryPoint(restSecurityHandlers)
                 .accessDeniedHandler(restSecurityHandlers)
@@ -63,11 +60,11 @@ public class SecurityConfig {
                         "/swagger-ui/**",
                         "/swagger-ui.html"
                 ).permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
         );
 
         http.authenticationProvider(provider);
-
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
