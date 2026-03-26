@@ -174,7 +174,7 @@ public class TopicService {
         Topic topic = topicRepository.findActiveByIdAndUserId(topicId, user.getId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Topic not found"));
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         topic.setDeletedAt(now);
         topicRepository.save(topic);
 

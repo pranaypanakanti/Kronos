@@ -2,6 +2,7 @@ package com.kronos.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +17,12 @@ import java.util.Map;
 public class JwtService {
 
     private final SecurityProperties securityProperties;
+    private Key cachedSigningKey;
 
-    private Key signingKey() {
+    @PostConstruct
+    void init() {
         byte[] decoded = Base64.getDecoder().decode(securityProperties.getJwt().getSecretBase64());
-        return Keys.hmacShaKeyFor(decoded);
+        this.cachedSigningKey = Keys.hmacShaKeyFor(decoded);
     }
 
     public String generateAccessToken(String subject, Map<String, Object> claims) {
@@ -32,13 +35,13 @@ public class JwtService {
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(exp))
                 .addClaims(claims)
-                .signWith(signingKey(), SignatureAlgorithm.HS256)
+                .signWith(cachedSigningKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public Jws<Claims> parseAndValidate(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(signingKey())
+                .setSigningKey(cachedSigningKey)
                 .requireIssuer(securityProperties.getJwt().getIssuer())
                 .build()
                 .parseClaimsJws(token);
