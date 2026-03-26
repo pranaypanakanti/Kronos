@@ -36,9 +36,9 @@ spring:
 
 springdoc:
   api-docs:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED:false}
   swagger-ui:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED:false}
 
 kronos:
   cors:

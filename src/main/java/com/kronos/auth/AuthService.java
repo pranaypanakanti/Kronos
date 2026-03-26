@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +43,10 @@ public class AuthService {
     private final SecurityProperties securityProperties;
     private final OtpProperties otpProperties;
     private final EmailService emailService;
+    private final Clock clock;
 
     // ---------- SIGNUP ----------
+    @Transactional
     public MessageResponse signup(SignupRequest req) {
         String email = req.getEmail().toLowerCase().trim();
 
@@ -67,15 +70,14 @@ public class AuthService {
 
     public MessageResponse resendSignupOtp(String emailRaw) {
         String email = emailRaw.toLowerCase().trim();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
 
-        if (user.isEmailVerified()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Email already verified");
-        }
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (!user.isEmailVerified()) {
+                sendOtpInternal(email, OtpPurpose.SIGNUP_VERIFY_EMAIL);
+            }
+        });
 
-        sendOtpInternal(email, OtpPurpose.SIGNUP_VERIFY_EMAIL);
-        return new MessageResponse("OTP resent.");
+        return new MessageResponse("If the email is registered and unverified, an OTP has been sent.");
     }
 
     public MessageResponse verifySignupOtp(VerifyOtpRequest req) {
@@ -138,7 +140,6 @@ public class AuthService {
         RefreshToken existing = refreshTokenRepository.findByTokenHash(hash)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid refresh token"));
 
-        // NEW: reuse detection
         // If a revoked token is presented again, assume compromise and revoke all active tokens.
         if (existing.getStatus() == RefreshTokenStatus.REVOKED) {
             UUID userId = existing.getUser().getId();
@@ -150,7 +151,7 @@ public class AuthService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Refresh token not active");
         }
 
-        if (existing.getExpiresAt().isBefore(LocalDateTime.now())) {
+        if (existing.getExpiresAt().isBefore(LocalDateTime.now(clock))) {
             existing.setStatus(RefreshTokenStatus.EXPIRED);
             refreshTokenRepository.save(existing);
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Refresh token expired");
@@ -160,7 +161,7 @@ public class AuthService {
 
         // revoke old
         existing.setStatus(RefreshTokenStatus.REVOKED);
-        existing.setRevokedAt(LocalDateTime.now());
+        existing.setRevokedAt(LocalDateTime.now(clock));
 
         // issue new
         IssuedRefreshToken replacement = issueRefreshToken(user, httpReq);
@@ -178,6 +179,7 @@ public class AuthService {
 
 
     // ---------- LOGOUT ----------
+    @Transactional
     public MessageResponse logout(String refreshTokenRaw) {
         if (refreshTokenRaw == null || refreshTokenRaw.isBlank()) {
             return new MessageResponse("Logged out.");
@@ -185,7 +187,7 @@ public class AuthService {
 
         refreshTokenRepository.findByTokenHash(Sha256.hex(refreshTokenRaw)).ifPresent(rt -> {
             rt.setStatus(RefreshTokenStatus.REVOKED);
-            rt.setRevokedAt(LocalDateTime.now());
+            rt.setRevokedAt(LocalDateTime.now(clock));
             refreshTokenRepository.save(rt);
         });
 
@@ -200,7 +202,7 @@ public class AuthService {
 
         List<RefreshToken> tokens = refreshTokenRepository.findAllByUserIdAndStatus(user.getId(), RefreshTokenStatus.ACTIVE);
         if (!tokens.isEmpty()) {
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now(clock);
             tokens.forEach(rt -> {
                 rt.setStatus(RefreshTokenStatus.REVOKED);
                 rt.setRevokedAt(now);
@@ -266,7 +268,7 @@ public class AuthService {
         List<RefreshToken> tokens = refreshTokenRepository.findAllByUserIdAndStatus(userId, RefreshTokenStatus.ACTIVE);
         if (tokens.isEmpty()) return;
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         tokens.forEach(rt -> {
             rt.setStatus(RefreshTokenStatus.REVOKED);
             rt.setRevokedAt(now);
@@ -275,7 +277,7 @@ public class AuthService {
     }
 
     private void sendOtpInternal(String email, OtpPurpose purpose) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
 
         OtpCode latest = otpCodeRepository.findTopByEmailAndPurposeOrderByCreatedAtDesc(email, purpose).orElse(null);
 
@@ -316,7 +318,7 @@ public class AuthService {
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid OTP"));
 
         if (code.isUsed()) throw new ApiException(HttpStatus.UNAUTHORIZED, "OTP already used");
-        if (code.getExpiresAt().isBefore(LocalDateTime.now())) throw new ApiException(HttpStatus.UNAUTHORIZED, "OTP expired");
+        if (code.getExpiresAt().isBefore(LocalDateTime.now(clock))) throw new ApiException(HttpStatus.UNAUTHORIZED, "OTP expired");
         if (code.getAttempts() >= code.getMaxAttempts()) throw new ApiException(HttpStatus.UNAUTHORIZED, "Too many attempts");
 
         code.setAttempts(code.getAttempts() + 1);
@@ -345,7 +347,7 @@ public class AuthService {
         token.setUser(user);
         token.setTokenHash(Sha256.hex(refreshRaw));
         token.setStatus(RefreshTokenStatus.ACTIVE);
-        token.setExpiresAt(LocalDateTime.now().plusDays(securityProperties.getJwt().getRefreshTokenDays()));
+        token.setExpiresAt(LocalDateTime.now(clock).plusDays(securityProperties.getJwt().getRefreshTokenDays()));
         token.setUserAgent(httpReq.getHeader("User-Agent"));
         token.setIpAddress(resolveIp(httpReq));
 

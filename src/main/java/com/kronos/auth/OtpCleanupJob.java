@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 @Profile("worker")
@@ -18,12 +19,13 @@ public class OtpCleanupJob {
 
     private final OtpCodeRepository otpCodeRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final Clock clock;
 
     // every day at 03:15
     @Scheduled(cron = "0 15 3 * * *")
     @Transactional
     public void cleanup() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
 
         // 1) OTP cleanup (always safe)
         otpCodeRepository.deleteByExpiresAtBefore(now);
@@ -33,6 +35,5 @@ public class OtpCleanupJob {
 
         // 3) Delete expired refresh tokens
         refreshTokenRepository.deleteByExpiresAtBeforeAndStatus(now, RefreshTokenStatus.EXPIRED);
-
     }
 }
