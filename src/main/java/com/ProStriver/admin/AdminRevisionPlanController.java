@@ -25,7 +25,7 @@ public class AdminRevisionPlanController {
         return ResponseEntity.ok(adminRevisionPlanService.list());
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<AdminRevisionPlanResponse> create(@Valid @RequestBody CreateRevisionPlanRequest req) {
         return ResponseEntity.ok(adminRevisionPlanService.create(req));
     }
