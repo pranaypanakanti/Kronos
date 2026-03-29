@@ -18,7 +18,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Profile("api")
 @Configuration
-@EnableConfigurationProperties({SecurityProperties.class, OtpProperties.class})
 @RequiredArgsConstructor
 public class SecurityConfig {
 
