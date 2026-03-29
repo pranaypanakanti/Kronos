@@ -25,7 +25,6 @@ public class UnverifiedUserCleanupJob {
     private final OtpCodeRepository otpCodeRepository;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    // Every Sunday at 4:00 AM
     @Scheduled(cron = "0 0 4 * * SUN")
     @Transactional
     public void cleanupUnverifiedUsers() {
@@ -36,14 +35,20 @@ public class UnverifiedUserCleanupJob {
             return;
         }
 
+        int deleted = 0;
         for (User user : unverified) {
-            otpCodeRepository.deleteAllByEmail(user.getEmail());
-
-            refreshTokenRepository.deleteAllByUserId(user.getId());
-
-            userRepository.delete(user);
+            try {
+                otpCodeRepository.deleteAllByEmail(user.getEmail());
+                refreshTokenRepository.deleteAllByUserId(user.getId());
+                userRepository.delete(user);
+                userRepository.flush(); // force FK check immediately
+                deleted++;
+            } catch (Exception ex) {
+                log.warn("UnverifiedUserCleanup: skipped user {} ({}): {}",
+                        user.getId(), user.getEmail(), ex.getMessage());
+            }
         }
 
-        log.info("UnverifiedUserCleanup: deleted {} unverified users", unverified.size());
+        log.info("UnverifiedUserCleanup: deleted {}/{} unverified users", deleted, unverified.size());
     }
 }

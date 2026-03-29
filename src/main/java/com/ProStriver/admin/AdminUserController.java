@@ -5,6 +5,7 @@ import com.ProStriver.admin.dto.UpdateUserRoleByEmailRequest;
 import com.ProStriver.admin.dto.UpdateUserRoleRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+@Profile("api")
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
