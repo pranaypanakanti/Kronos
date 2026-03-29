@@ -67,7 +67,8 @@ public class SecurityConfig {
                         "/api/auth/refresh",
                         "/api/auth/logout",
                         "/api/auth/forgot-password",
-                        "/api/auth/reset-password"
+                        "/api/auth/reset-password",
+                        "/api/admin/health-check"
                 ).permitAll()
                 .requestMatchers(
                         "/v3/api-docs/**",
