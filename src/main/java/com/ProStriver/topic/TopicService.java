@@ -7,17 +7,17 @@ import com.ProStriver.entity.Topic;
 import com.ProStriver.entity.User;
 import com.ProStriver.entity.enums.RevisionStatus;
 import com.ProStriver.entity.enums.TopicStatus;
-import com.ProStriver.repository.RevisionPlanRepository;
-import com.ProStriver.repository.RevisionScheduleRepository;
-import com.ProStriver.repository.TopicRepository;
-import com.ProStriver.repository.UserRepository;
+import com.ProStriver.repository.*;
 import com.ProStriver.topic.dto.CreateTopicRequest;
 import com.ProStriver.topic.dto.PatchTopicRequest;
 import com.ProStriver.topic.dto.TopicMlSummaryResponse;
 import com.ProStriver.topic.dto.TopicResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -119,7 +119,18 @@ public class TopicService {
 
         String query = (q == null || q.isBlank()) ? null : q.trim();
 
-        return topicRepository.search(user.getId(), status, from, to, query, pageable)
+        Specification<Topic> spec = Specification
+                .where(TopicSpecifications.belongsToUser(user.getId()))
+                .and(TopicSpecifications.notDeleted())
+                .and(TopicSpecifications.hasStatus(status))
+                .and(TopicSpecifications.createdOnOrAfter(from))
+                .and(TopicSpecifications.createdBefore(to))
+                .and(TopicSpecifications.searchText(query));
+
+        return topicRepository.findAll(spec, PageRequest.of(
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        Sort.by(Sort.Direction.DESC, "createdAt")))
                 .map(this::toResponse);
     }
 
