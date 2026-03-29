@@ -32,9 +32,9 @@ public interface TopicRepository extends JpaRepository<Topic, UUID> {
               and (:to is null or t.createdAt < :to)
               and (
                    :q is null
-                   or lower(t.title) like lower(concat('%', :q, '%'))
-                   or lower(t.subject) like lower(concat('%', :q, '%'))
-                   or lower(coalesce(t.notes, '')) like lower(concat('%', :q, '%'))
+                   or lower(t.title) like lower(concat('%', cast(:q as string), '%'))
+                   or lower(t.subject) like lower(concat('%', cast(:q as string), '%'))
+                   or lower(coalesce(t.notes, '')) like lower(concat('%', cast(:q as string), '%'))
               )
             order by t.createdAt desc
             """)

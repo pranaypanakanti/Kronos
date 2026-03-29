@@ -4,10 +4,12 @@ import com.ProStriver.user.dto.UpdateUserProfileRequest;
 import com.ProStriver.user.dto.UserProfileResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+@Profile("api")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
