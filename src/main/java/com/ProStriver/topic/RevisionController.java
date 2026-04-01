@@ -1,5 +1,7 @@
 package com.ProStriver.topic;
 
+import com.ProStriver.admin.AdminRevisionPlanService;
+import com.ProStriver.admin.dto.AdminRevisionPlanResponse;
 import com.ProStriver.topic.dto.TodayRevisionItemResponse;
 import com.ProStriver.topic.dto.UpcomingRevisionResponse;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,18 @@ import java.util.UUID;
 public class RevisionController {
 
     private final RevisionService revisionService;
+
+    private final AdminRevisionPlanService adminRevisionPlanService;
+
+    @GetMapping("/get-all")
+    public ResponseEntity<List<AdminRevisionPlanResponse>> list() {
+        return ResponseEntity.ok(adminRevisionPlanService.list());
+    }
+
+    @GetMapping("/get-by-id/{id}")
+    public ResponseEntity<AdminRevisionPlanResponse> getPlanById(@PathVariable UUID id) {
+        return ResponseEntity.ok(adminRevisionPlanService.getPlanById(id));
+    }
 
     @GetMapping("/today")
     public ResponseEntity<List<TodayRevisionItemResponse>> today(Authentication auth) {

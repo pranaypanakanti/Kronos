@@ -63,8 +63,6 @@ public class SecurityConfig {
                         "/api/auth/logout",
                         "/api/auth/forgot-password",
                         "/api/auth/reset-password",
-                        "/api/admin/revision-plans/get-all",
-                        "/api/admin/revision-plans/get-by-id/**",
                         "/api/admin/health-check"
                 ).permitAll()
                 .requestMatchers(
