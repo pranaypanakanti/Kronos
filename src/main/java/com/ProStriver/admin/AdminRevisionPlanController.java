@@ -20,16 +20,6 @@ public class AdminRevisionPlanController {
 
     private final AdminRevisionPlanService adminRevisionPlanService;
 
-    @GetMapping("/get-all")
-    public ResponseEntity<List<AdminRevisionPlanResponse>> list() {
-        return ResponseEntity.ok(adminRevisionPlanService.list());
-    }
-
-    @GetMapping("/get-by-id/{id}")
-    public ResponseEntity<AdminRevisionPlanResponse> getPlanById(@PathVariable UUID id) {
-        return ResponseEntity.ok(adminRevisionPlanService.getPlanById(id));
-    }
-
     @PostMapping("/create")
     public ResponseEntity<AdminRevisionPlanResponse> create(@Valid @RequestBody CreateRevisionPlanRequest req) {
         return ResponseEntity.ok(adminRevisionPlanService.create(req));
