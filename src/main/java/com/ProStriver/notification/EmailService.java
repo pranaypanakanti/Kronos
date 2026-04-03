@@ -1,5 +1,6 @@
 package com.ProStriver.notification;
 
+import com.ProStriver.common.exception.ApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,7 +60,7 @@ public class EmailService {
         } catch (HttpClientErrorException e) {
             log.error("Brevo API client error sending to {}: {} - {}",
                     toEmail, e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("Failed to send email via Brevo API", e);
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Could not send email. Please check your email address.");
         } catch (Exception e) {
             log.error("Failed to send email to {} via Brevo API", toEmail, e);
             throw new RuntimeException("Failed to send email", e);
