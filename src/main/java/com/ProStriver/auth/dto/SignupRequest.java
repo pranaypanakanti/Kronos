@@ -11,6 +11,7 @@ public class SignupRequest {
 
     @Email
     @NotBlank
+    @Pattern(regexp = "^[\\w.+-]+@[\\w.-]+\\.[a-zA-Z]{2,}$", message = "Email must have a valid domain (e.g., user@example.com)")
     private String email;
 
     @NotBlank
